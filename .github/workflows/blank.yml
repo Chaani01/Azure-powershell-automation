@@ -1,0 +1,33 @@
+name: Azure VM Creation CI
+
+on:
+  push:
+    branches:
+      - main # or master, depending on your default branch
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup PowerShell
+      uses: PowerShell/setup-powershell@v2
+      with:
+        pwsh-version: 'latest'
+
+    - name: Install Az Module
+      run: |
+        pwsh -Command "Install-Module -Name Az -Scope CurrentUser -Repository PSGallery -Force"
+
+    - name: Check PowerShell script syntax
+      run: |
+        pwsh -Command "Get-Command -Path ./Create-AzVM.ps1"
+        pwsh -Command "Test-ScriptAnalyzer -Path ./Create-AzVM.ps1"
+
+    - name: Validate parameters (simple check)
+      run: |
+        pwsh -Command "Get-Content ./Create-AzVM.ps1 | Select-String -Pattern 'param\s*\(' | Out-Null"
+        if ($LASTEXITCODE -ne 0) { Write-Error "No 'param' block found in script." }
